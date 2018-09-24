@@ -1,37 +1,43 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Image, Dimensions, TouchableOpacity, StyleSheet } from 'react-native';
+import { withNavigation } from 'react-navigation';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Transition, createFluidNavigator } from '../lib';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
-  screen1: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+  card: {
+    backgroundColor: '#ECEEFA',
+    flexDirection: 'column',
     justifyContent: 'center',
-    alignSelf: 'stretch',
-    padding: 20,
+    margin: 20,
+    marginTop: 10,
+    marginBottom: 10,
+    borderRadius: 4,
+    shadowOpacity: 0.5,
+    shadowColor: '#AAA',
+    shadowOffset: { width: 2, height: 5 },
   },
-  screen2: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    alignSelf: 'stretch',
-    justifyContent: 'center',
-    padding: 20,
+  smallImage: {
+    width: Dimensions.get('window').width - 40,
+    height: Dimensions.get('window').width - 60,
   },
-  screen3: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    justifyContent: 'center',
-    padding: 20,
+  smallTitle: {
+    margin: 10,
+  },
+  bigCard: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: '#FFF',
+    justifyContent: 'flex-start',
+  },
+  bigImage: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').width,
+  },
+  bigTitle: {
+    margin: 20,
   },
   buttons: {
     flexDirection: 'row',
@@ -39,120 +45,75 @@ const styles = StyleSheet.create({
   },
 });
 
-const Circle = ({ background, size }) => (
-  <View
-    style={{
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: background,
-      width: size,
-      height: size,
-      borderRadius: size / 2,
-    }}
-  />
+const Card = ({ navigation, source, id }) => (
+  <Transition shared={`card${id}`} top appear="horizontal" disappear="fade" delay>
+    <TouchableOpacity
+      activeOpacity={0.8}
+      style={styles.card}
+      onPress={() => navigation.navigate('screen2', { id, source })}
+      hitSlop={{ left: 20, top: 20, right: 20, bottom: 20 }}
+    >
+      <Transition shared={`image${id}`}>
+        <Image style={styles.smallImage} source={source} />
+      </Transition>
+      <Transition shared={`text${id}`}>
+        <Text style={styles.smallTitle}>{`Card ${id}`}</Text>
+      </Transition>
+    </TouchableOpacity>
+  </Transition>
 );
 
-const Shape = ({ background, size, borderRadius }) => (
-  <View
-    style={{
-      backgroundColor: background || '#EE0000',
-      width: size,
-      height: size,
-      borderRadius: borderRadius || 0,
-    }}
-  />
-);
+const NavCard = withNavigation(Card);
 
-const Screen1 = (props) => (
+class Screen1 extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { item: [] };
+  }
+
+  componentWillMount() {
+    const items = [];
+    const size = Dimensions.get('window').width;
+    const max = 10;
+    const randMax = 100;
+    for (let i = 0; i < max; i++) {
+      let randomNumber = Math.floor((Math.random() * randMax) + 1);
+      const idExists = (e) => e.id === randomNumber;
+      while (items.findIndex(idExists) > -1) {
+        randomNumber = Math.floor((Math.random() * randMax) + 1);
+      }
+
+      items.push({ url: `https://picsum.photos/${size}/${size}?image=${randomNumber}`, id: randomNumber });
+    }
+    this.setState((prevState) => ({ ...prevState, items }));
+  }
+
+  render() {
+    const { items } = this.state;
+    return (
+      <ScrollView style={styles.container}>
+        {items.map((source, index) => (<NavCard key={index} id={index} source={source} />))}
+      </ScrollView>);
+  }
+}
+
+const Screen2 = ({ navigation }) => (
   <View style={styles.container}>
-    <Transition appear="flip">
-      <Text>1.Screen</Text>
-    </Transition>
-    <View style={styles.screen1}>
-      <Transition shared="circle">
-        <Shape size={50} borderRadius={4} background="#EE0000" />
-      </Transition>
-    </View>
-    <View style={{ flexDirection: 'row' }}>
-      <Transition appear="horizontal" delay>
-        <Circle background="#55AA55" size={20} />
-      </Transition>
-      <View style={{ width: 20 }} />
-      <Transition appear="horizontal" delay>
-        <Circle background="#55AA55" size={20} />
-      </Transition>
-      <View style={{ width: 20 }} />
-      <Transition appear="horizontal" delay>
-        <Circle background="#55AA55" size={20} />
-      </Transition>
-    </View>
-    <Transition appear="horizontal">
-      <View style={styles.buttons}>
-        <Button title="Next" onPress={() => props.navigation.navigate('screen2')} />
+    <Transition shared={`card${navigation.getParam('id')}`}>
+      <View style={styles.bigCard}>
+        <Transition shared={`image${navigation.getParam('id')}`}>
+          <Image style={styles.bigImage} source={navigation.getParam('source')} />
+        </Transition>
+        <Transition shared={`text${navigation.getParam('id')}`}>
+          <Text style={styles.bigTitle}>{`Card ${navigation.getParam('id')}`}</Text>
+        </Transition>
       </View>
     </Transition>
-  </View>
-);
-
-const Screen2 = (props) => (
-  <View style={styles.container}>
-    <Transition appear="flip">
-      <Text>2.Screen</Text>
-    </Transition>
-    <View style={styles.screen2}>
-      <Transition shared="circle">
-        <Shape size={50} borderRadius={25} background="#EE0000" />
-      </Transition>
-    </View>
-    <View style={{ flexDirection: 'row' }}>
-      <Transition appear="horizontal" delay>
-        <Circle background="#55AA55" size={20} />
-      </Transition>
-      <View style={{ width: 20 }} />
-      <Transition appear="horizontal" delay>
-        <Circle background="#55AA55" size={20} />
-      </Transition>
-      <View style={{ width: 20 }} />
-      <Transition appear="horizontal" delay>
-        <Circle background="#55AA55" size={20} />
-      </Transition>
-    </View>
-    <Transition appear="horizontal">
+    <Transition anchor={`image${navigation.getParam('id')}`}>
       <View style={styles.buttons}>
-        <Button title="Back" onPress={() => props.navigation.goBack()} />
-        <View style={{ width: 20 }} />
-        <Button title="Next" onPress={() => props.navigation.navigate('screen3')} />
-      </View>
-    </Transition>
-  </View>
-);
-
-const Screen3 = (props) => (
-  <View style={styles.container}>
-    <Transition appear="flip">
-      <Text>3.Screen</Text>
-    </Transition>
-    <View style={styles.screen3}>
-      <Transition shared="circle">
-        <Shape size={140} borderRadius={4} background="#EE0000" />
-      </Transition>
-    </View>
-    <View style={{ flexDirection: 'row' }}>
-      <Transition appear="horizontal" delay>
-        <Circle background="#55AA55" size={20} />
-      </Transition>
-      <View style={{ width: 20 }} />
-      <Transition appear="horizontal" delay>
-        <Circle background="#55AA55" size={20} />
-      </Transition>
-      <View style={{ width: 20 }} />
-      <Transition appear="horizontal" delay>
-        <Circle background="#55AA55" size={20} />
-      </Transition>
-    </View>
-    <Transition appear="horizontal">
-      <View style={styles.buttons}>
-        <Button title="Back" onPress={() => props.navigation.goBack()} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="arrow-left" size={24} color="#FFF" />
+        </TouchableOpacity>
       </View>
     </Transition>
   </View>
@@ -161,7 +122,6 @@ const Screen3 = (props) => (
 const Navigator = createFluidNavigator({
   screen1: { screen: Screen1 },
   screen2: { screen: Screen2 },
-  screen3: { screen: Screen3 },
 }, {
   navigationOptions: { gesturesEnabled: true },
 });
